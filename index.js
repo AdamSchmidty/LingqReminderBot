@@ -60,7 +60,9 @@ async function processLingqProfileData(profileData) {
       } studied ${title} today! His known words count is ${knownWords} as of ${timestamp}`;
     } else {
       const mention =
-        title === "Croatian" ? "<@325116664376983553>" : "@526628016386867202>";
+        title === "Croatian"
+          ? "<@325116664376983553>"
+          : "<@526628016386867202>";
       message = `${mention} Go study ${title}. You last studied on ${lastUsed}. Your known words count is ${knownWords} as of ${timestamp} PST`;
     }
 
