@@ -36,10 +36,6 @@ async function processLeetCodeData(userNames) {
       : `${user.discordHandle} please practice leetcode today! You last made a submission of ${mostRecentSubmissionData.title} on ${submissionDateInFreedomFormat}`;
 
     sendMessagesToWebhooks(message, [boogsDisciplesWebHook]);
-
-    // console.log(mostRecentSubmissionData);
-    // console.log(solveDate);
-    // console.log(checkIfPracticedToday(solveDate));
   }
 }
 
