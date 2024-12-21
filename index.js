@@ -4,11 +4,12 @@ const { DateTime } = require("luxon");
 const boogsDisciplesWebHook = process.env.boogs_disciples_webhook;
 const theCommunityWebHook = process.env.the_community_webhook;
 const leetCodeUsernames = JSON.parse(process.env.leetcode_usernames);
+const lingqUser = process.env.lingq_user;
 
 const main = async () => {
   try {
     processLeetCodeData(leetCodeUsernames);
-    const lingqProfileData = await getLingqProfileData();
+    const lingqProfileData = await getLingqProfileData(lingqUser);
     await processLingqProfileData(lingqProfileData);
   } catch (error) {
     console.error("Error in handler:", error);
@@ -53,7 +54,7 @@ async function processLingqProfileData(profileData) {
     const timestamp = DateTime.now()
       .setZone("America/Los_Angeles")
       .startOf("second")
-      .toFormat("yyyy-MM-dd HH:mm:ss");
+      .toFormat("MM/dd/yyyy HH:mm:ss");
 
     let message;
 
@@ -63,10 +64,8 @@ async function processLingqProfileData(profileData) {
       } studied ${title} today! His known words count is ${knownWords} as of ${timestamp}`;
     } else {
       const mention =
-        title === "Croatian"
-          ? "<@325116664376983553>"
-          : "<@526628016386867202>";
-      message = `${mention} Go study ${title}. You last studied on ${lastUsed}. Your known words count is ${knownWords} as of ${timestamp}`;
+        title === "Croatian" ? "<@325116664376983553>" : "@526628016386867202>";
+      message = `${mention} Go study ${title}. You last studied on ${lastUsed}. Your known words count is ${knownWords} as of ${timestamp} PST`;
     }
 
     const webhooks =
@@ -101,10 +100,10 @@ const checkIfPracticedToday = (targetDateString) => {
   return currentDate.equals(targetDate);
 };
 
-const getLingqProfileData = async () => {
+const getLingqProfileData = async (lingqUser) => {
   try {
     const response = await fetch(
-      "https://www.lingq.com/api/v2/languages/?username=Quafle"
+      `https://www.lingq.com/api/v2/languages/?username=${lingqUser}`
     );
 
     if (!response.ok) {
@@ -130,7 +129,7 @@ const getLeetcodeProfileData = async (userName) => {
     query:
       "\n    query recentAcSubmissions($username: String!, $limit: Int!) {\n  recentAcSubmissionList(username: $username, limit: $limit) {\n    id\n    title\n    titleSlug\n    timestamp\n  }\n}\n    ",
     variables: {
-      username: "adamschmidt2023",
+      username: userName,
       limit: 1,
     },
     operationName: "recentAcSubmissions",
