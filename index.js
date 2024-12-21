@@ -3,18 +3,46 @@ const { DateTime } = require("luxon");
 
 const boogsDisciplesWebHook = process.env.boogs_disciples_webhook;
 const theCommunityWebHook = process.env.the_community_webhook;
+const leetCodeUsernames = JSON.parse(process.env.leetcode_usernames);
 
 const main = async () => {
   try {
-    console.log(`${boogsDisciplesWebHook} and ${theCommunityWebHook}`);
-    const profileData = await getProfileData();
-    await processProfileData(profileData);
+    processLeetCodeData(leetCodeUsernames);
+    const lingqProfileData = await getLingqProfileData();
+    await processLingqProfileData(lingqProfileData);
   } catch (error) {
     console.error("Error in handler:", error);
   }
 };
 
-async function processProfileData(profileData) {
+async function processLeetCodeData(userNames) {
+  for (user of userNames) {
+    const mostRecentSubmissionData = (
+      await getLeetcodeProfileData(user.leetcodeName)
+    ).data.recentAcSubmissionList[0];
+
+    const submissionDate = new Date(
+      Number(mostRecentSubmissionData.timestamp) * 1000
+    );
+    const practicedToday = checkIfPracticedToday(submissionDate);
+
+    const submissionDateInFreedomFormat = `${
+      submissionDate.getMonth() + 1
+    }/${submissionDate.getDate()}/${submissionDate.getFullYear()}`;
+
+    const message = practicedToday
+      ? `${user.actualName} practiced leetcode today! The problem they last submitted was ${mostRecentSubmissionData.title}`
+      : `${user.discordHandle} please practice leetcode today! You last made a submission of ${mostRecentSubmissionData.title} on ${submissionDateInFreedomFormat}`;
+
+    sendMessagesToWebhooks(message, [boogsDisciplesWebHook]);
+
+    // console.log(mostRecentSubmissionData);
+    // console.log(solveDate);
+    // console.log(checkIfPracticedToday(solveDate));
+  }
+}
+
+async function processLingqProfileData(profileData) {
   const targetedLanguages = profileData.filter(({ title }) =>
     ["Croatian", "Portuguese"].includes(title)
   );
@@ -73,7 +101,7 @@ const checkIfPracticedToday = (targetDateString) => {
   return currentDate.equals(targetDate);
 };
 
-const getProfileData = async () => {
+const getLingqProfileData = async () => {
   try {
     const response = await fetch(
       "https://www.lingq.com/api/v2/languages/?username=Quafle"
@@ -88,6 +116,38 @@ const getProfileData = async () => {
     console.error("Error in getProfileData:", error);
     throw error;
   }
+};
+
+const getLeetcodeProfileData = async (userName) => {
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  myHeaders.append(
+    "Cookie",
+    "csrftoken=GR3H50SaOaujIfZm3EMur8McS6ZJVkTafl9JSKpmIfLXAoXmQjhwiWZfY0vMR39R"
+  );
+
+  const raw = JSON.stringify({
+    query:
+      "\n    query recentAcSubmissions($username: String!, $limit: Int!) {\n  recentAcSubmissionList(username: $username, limit: $limit) {\n    id\n    title\n    titleSlug\n    timestamp\n  }\n}\n    ",
+    variables: {
+      username: "adamschmidt2023",
+      limit: 1,
+    },
+    operationName: "recentAcSubmissions",
+  });
+
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow",
+  };
+
+  const response = await fetch(
+    "https://leetcode.com/graphql/\n",
+    requestOptions
+  );
+  return response.json();
 };
 
 main();
